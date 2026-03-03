@@ -11,20 +11,20 @@
       "Grep",
       "Glob",
       "LS",
+      "Write",
+      "Edit",
+      "MultiEdit",
       "Bash(go:version)",
       "Bash(go:list:*)",
       "Bash(go:build:*)",
       "Bash(go:test:*)",
       "Bash(gofmt:*)",
       "Bash(goimports:*)",
-      "Bash(golangci-lint:run:*)"
+      "Bash(golangci-lint:run:*)",
+      "Bash(go:get:*)",
+      "Bash(go:mod:tidy)"
     ],
     "ask": [
-      "Write",
-      "Edit",
-      "MultiEdit",
-      "Bash(go:get:*)",
-      "Bash(go:mod:tidy)",
       "Bash(git:add:*)",
       "Bash(git:commit:*)"
     ],

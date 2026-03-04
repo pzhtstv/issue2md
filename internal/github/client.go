@@ -8,7 +8,11 @@ import (
 	"time"
 
 	"github.com/google/go-github/v45/github"
+	"golang.org/x/oauth2"
 )
+
+// defaultContext is used for API calls
+var defaultCtx = context.Background()
 
 // client implements GitHuber interface using go-github library
 type client struct {
@@ -33,24 +37,32 @@ func New(opts ...Option) GitHuber {
 		opt(c)
 	}
 
-	// Create GitHub client
-	c.httpClient = github.NewClient(&http.Client{Timeout: 30 * time.Second})
-	// Note: Token authentication requires go-github v47+ or manual transport setup
+	var hc *http.Client
+	if c.token != "" {
+		// Use OAuth2 for token authentication
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.token},
+		)
+		tc := oauth2.NewClient(defaultCtx, ts)
+		tc.Timeout = 30 * time.Second
+		hc = tc
+	} else {
+		hc = &http.Client{Timeout: 30 * time.Second}
+	}
 
+	c.httpClient = github.NewClient(hc)
 	return c
 }
 
 // FetchIssue fetches an issue from GitHub
 func (c *client) FetchIssue(owner, repo string, number int) (*IssueData, error) {
-	ctx := context.Background()
-
-	issue, resp, err := c.httpClient.Issues.Get(ctx, owner, repo, number)
+	issue, resp, err := c.httpClient.Issues.Get(defaultCtx, owner, repo, number)
 	if err != nil {
 		return nil, c.handleError(resp)
 	}
 
 	// Fetch comments
-	comments, _, err := c.httpClient.Issues.ListComments(ctx, owner, repo, number, nil)
+	comments, _, err := c.httpClient.Issues.ListComments(defaultCtx, owner, repo, number, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch comments: %w", err)
 	}
@@ -80,15 +92,13 @@ func (c *client) FetchIssue(owner, repo string, number int) (*IssueData, error) 
 
 // FetchPullRequest fetches a pull request from GitHub
 func (c *client) FetchPullRequest(owner, repo string, number int) (*PullRequestData, error) {
-	ctx := context.Background()
-
-	pr, resp, err := c.httpClient.PullRequests.Get(ctx, owner, repo, number)
+	pr, resp, err := c.httpClient.PullRequests.Get(defaultCtx, owner, repo, number)
 	if err != nil {
 		return nil, c.handleError(resp)
 	}
 
 	// Fetch comments (issue comments)
-	comments, _, err := c.httpClient.Issues.ListComments(ctx, owner, repo, number, nil)
+	comments, _, err := c.httpClient.Issues.ListComments(defaultCtx, owner, repo, number, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch comments: %w", err)
 	}

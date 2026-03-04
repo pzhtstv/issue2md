@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+const (
+	prefixHTTPS   = "https://"
+	prefixHTTP    = "http://"
+	prefixWWW     = "www."
+	minPartsCount = 5
+)
+
 // urlParser is the default implementation of Parser
 type urlParser struct{}
 
@@ -18,23 +25,23 @@ func New() Parser {
 func (p *urlParser) Parse(rawURL string) (*ParsedURL, error) {
 	// Remove protocol prefix with single operation
 	url := rawURL
-	if len(url) > 8 {
-		if url[:8] == "https://" {
-			url = url[8:]
-		} else if len(url) > 7 && url[:7] == "http://" {
-			url = url[7:]
+	if len(url) > len(prefixHTTPS) {
+		if url[:len(prefixHTTPS)] == prefixHTTPS {
+			url = url[len(prefixHTTPS):]
+		} else if len(url) > len(prefixHTTP) && url[:len(prefixHTTP)] == prefixHTTP {
+			url = url[len(prefixHTTP):]
 		}
 	}
 
 	// Handle www prefix
-	if len(url) > 4 && url[:4] == "www." {
-		url = url[4:]
+	if len(url) > len(prefixWWW) && url[:len(prefixWWW)] == prefixWWW {
+		url = url[len(prefixWWW):]
 	}
 
 	// Split by /
-	parts := strings.SplitN(url, "/", 5)
+	parts := strings.SplitN(url, "/", minPartsCount)
 	// Expected format: github.com/owner/repo/type/number (5 parts minimum)
-	if len(parts) < 5 {
+	if len(parts) < minPartsCount {
 		return nil, fmt.Errorf("%w: %s", ErrInvalidURL, rawURL)
 	}
 
